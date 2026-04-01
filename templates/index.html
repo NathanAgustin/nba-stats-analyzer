@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Player Stats - NBA Stats Analyzer{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1>NBA Player Statistics</h1>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Filters</h5>
+                <div class="row">
+                    <div class="col-md-4">
+                        <label for="seasonSelect" class="form-label">Season</label>
+                        <select class="form-select" id="seasonSelect">
+                            <option value="2023-24">2023-24</option>
+                            <option value="2022-23">2022-23</option>
+                            <option value="2021-22">2021-22</option>
+                            <option value="2020-21">2020-21</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="minGames" class="form-label">Min Games Played</label>
+                        <input type="number" class="form-control" id="minGames" value="20" min="1">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">&nbsp;</label>
+                        <button class="btn btn-primary w-100" onclick="loadStats()">Load Stats</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="text-center" style="display: none;">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Fetching NBA stats...</p>
+        </div>
+
+        <div id="statsTable" style="display: none;">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable(0)">Player</th>
+                            <th onclick="sortTable(1)">Team</th>
+                            <th onclick="sortTable(2)">GP</th>
+                            <th onclick="sortTable(3)">MIN</th>
+                            <th onclick="sortTable(4)">PTS</th>
+                            <th onclick="sortTable(5)">REB</th>
+                            <th onclick="sortTable(6)">AST</th>
+                            <th onclick="sortTable(7)">STL</th>
+                            <th onclick="sortTable(8)">BLK</th>
+                            <th onclick="sortTable(9)">FG%</th>
+                            <th onclick="sortTable(10)">3P%</th>
+                            <th onclick="sortTable(11)">FT%</th>
+                        </tr>
+                    </thead>
+                    <tbody id="statsBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentData = [];
+
+function loadStats() {
+    const season = document.getElementById('seasonSelect').value;
+    const minGames = document.getElementById('minGames').value;
+    
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('statsTable').style.display = 'none';
+    
+    fetch(`/api/players?season=${season}&min_games=${minGames}`)
+        .then(response => response.json())
+        .then(data => {
+            currentData = data;
+            displayStats(data);
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('statsTable').style.display = 'block';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('loading').style.display = 'none';
+            alert('Error loading stats. Please try again.');
+        });
+}
+
+function displayStats(data) {
+    const tbody = document.getElementById('statsBody');
+    tbody.innerHTML = '';
+    
+    data.forEach(player => {
+        const row = tbody.insertRow();
+        row.innerHTML = `
+            <td>${player.PLAYER_NAME}</td>
+            <td>${player.TEAM_ABBREVIATION}</td>
+            <td>${player.GP}</td>
+            <td>${player.MIN.toFixed(1)}</td>
+            <td>${player.PTS.toFixed(1)}</td>
+            <td>${player.REB.toFixed(1)}</td>
+            <td>${player.AST.toFixed(1)}</td>
+            <td>${player.STL.toFixed(1)}</td>
+            <td>${player.BLK.toFixed(1)}</td>
+            <td>${(player.FG_PCT * 100).toFixed(1)}%</td>
+            <td>${(player.FG3_PCT * 100).toFixed(1)}%</td>
+            <td>${(player.FT_PCT * 100).toFixed(1)}%</td>
+        `;
+    });
+}
+
+function sortTable(columnIndex) {
+    const table = document.querySelector('table');
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    rows.sort((a, b) => {
+        const aValue = a.cells[columnIndex].textContent;
+        const bValue = b.cells[columnIndex].textContent;
+        
+        const aNum = parseFloat(aValue.replace('%', ''));
+        const bNum = parseFloat(bValue.replace('%', ''));
+        
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+            return bNum - aNum;
+        }
+        return aValue.localeCompare(bValue);
+    });
+    
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+// Load stats on page load
+window.onload = function() {
+    loadStats();
+};
+</script>
+{% endblock %}

@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}Compare Players - NBA Stats Analyzer{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1>Compare Players</h1>
+        <p class="lead">Select players to compare their stats side-by-side</p>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <label for="seasonSelect" class="form-label">Season</label>
+                        <select class="form-select" id="seasonSelect">
+                            <option value="2023-24">2023-24</option>
+                            <option value="2022-23">2022-23</option>
+                            <option value="2021-22">2021-22</option>
+                            <option value="2020-21">2020-21</option>
+                        </select>
+                    </div>
+                    <div class="col-md-8">
+                        <label for="playerSearch" class="form-label">Search Players</label>
+                        <input type="text" class="form-control" id="playerSearch" placeholder="Type player name...">
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>Selected Players:</h6>
+                        <div id="selectedPlayers" class="d-flex flex-wrap gap-2 mb-3">
+                            <span class="text-muted">No players selected</span>
+                        </div>
+                        <button class="btn btn-primary" onclick="compareSelected()">Compare Selected</button>
+                        <button class="btn btn-secondary" onclick="clearSelection()">Clear</button>
+                    </div>
+                </div>
+                
+                <div id="playerSuggestions" class="list-group mt-2" style="display: none; max-height: 300px; overflow-y: auto;">
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="text-center" style="display: none;">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+
+        <div id="comparisonResults" style="display: none;">
+            <div id="comparisonChart"></div>
+            
+            <div class="table-responsive mt-4">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Stat</th>
+                            <th id="player1Header"></th>
+                            <th id="player2Header"></th>
+                            <th id="player3Header" style="display: none;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="comparisonTable">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allPlayers = [];
+let selectedPlayers = [];
+
+// Load player list on page load
+window.onload = function() {
+    loadPlayerList();
+};
+
+function loadPlayerList() {
+    const season = document.getElementById('seasonSelect').value;
+    fetch(`/api/players?season=${season}&min_games=1`)
+        .then(response => response.json())
+        .then(data => {
+            allPlayers = data;
+            setupSearch();
+        });
+}
+
+function setupSearch() {
+    const searchInput = document.getElementById('playerSearch');
+    const suggestions = document.getElementById('playerSuggestions');
+    
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase();
+        
+        if (query.length < 2) {
+            suggestions.style.display = 'none';
+            return;
+        }
+        
+        const matches = allPlayers.filter(p => 
+            p.PLAYER_NAME.toLowerCase().includes(query)
+        ).slice(0, 10);
+        
+        if (matches.length > 0) {
+            suggestions.innerHTML = matches.map(p => `
+                <a href="#" class="list-group-item list-group-item-action" 
+                   onclick="addPlayer('${p.PLAYER_NAME}'); return false;">
+                    ${p.PLAYER_NAME} - ${p.TEAM_ABBREVIATION}
+                </a>
+            `).join('');
+            suggestions.style.display = 'block';
+        } else {
+            suggestions.style.display = 'none';
+        }
+    });
+}
+
+function addPlayer(playerName) {
+    if (selectedPlayers.length >= 3) {
+        alert('You can compare up to 3 players at a time');
+        return;
+    }
+    
+    if (!selectedPlayers.includes(playerName)) {
+        selectedPlayers.push(playerName);
+        updateSelectedDisplay();
+    }
+    
+    document.getElementById('playerSearch').value = '';
+    document.getElementById('playerSuggestions').style.display = 'none';
+}
+
+function removePlayer(playerName) {
+    selectedPlayers = selectedPlayers.filter(p => p !== playerName);
+    updateSelectedDisplay();
+}
+
+function updateSelectedDisplay() {
+    const container = document.getElementById('selectedPlayers');
+    
+    if (selectedPlayers.length === 0) {
+        container.innerHTML = '<span class="text-muted">No players selected</span>';
+        return;
+    }
+    
+    container.innerHTML = selectedPlayers.map(p => `
+        <span class="badge bg-primary">
+            ${p} <span onclick="removePlayer('${p}')" style="cursor: pointer;">×</span>
+        </span>
+    `).join('');
+}
+
+function clearSelection() {
+    selectedPlayers = [];
+    updateSelectedDisplay();
+    document.getElementById('comparisonResults').style.display = 'none';
+}
+
+function compareSelected() {
+    if (selectedPlayers.length < 2) {
+        alert('Please select at least 2 players to compare');
+        return;
+    }
+    
+    const season = document.getElementById('seasonSelect').value;
+    const params = new URLSearchParams();
+    selectedPlayers.forEach(p => params.append('players', p));
+    params.append('season', season);
+    
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('comparisonResults').style.display = 'none';
+    
+    fetch(`/api/player-comparison?${params}`)
+        .then(response => response.json())
+        .then(data => {
+            displayComparison(data);
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('comparisonResults').style.display = 'block';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('loading').style.display = 'none';
+            alert('Error loading comparison. Please try again.');
+        });
+}
+
+function displayComparison(data) {
+    // Create radar chart
+    const traces = data.players.map((player, idx) => ({
+        type: 'scatterpolar',
+        r: data.values.map(statValues => statValues[idx]),
+        theta: data.stats,
+        fill: 'toself',
+        name: player
+    }));
+    
+    const layout = {
+        polar: {
+            radialaxis: {
+                visible: true,
+                range: [0, Math.max(...data.values.flat()) * 1.2]
+            }
+        },
+        showlegend: true,
+        title: 'Player Stats Comparison'
+    };
+    
+    Plotly.newPlot('comparisonChart', traces, layout);
+    
+    // Update table headers
+    data.players.forEach((player, idx) => {
+        const header = document.getElementById(`player${idx + 1}Header`);
+        if (header) {
+            header.textContent = player;
+            header.style.display = idx < data.players.length ? '' : 'none';
+        }
+    });
+    
+    // Create comparison table
+    const tbody = document.getElementById('comparisonTable');
+    tbody.innerHTML = '';
+    
+    data.stats.forEach((stat, statIdx) => {
+        const row = tbody.insertRow();
+        row.insertCell(0).innerHTML = `<strong>${stat}</strong>`;
+        
+        data.values[statIdx].forEach((value, playerIdx) => {
+            const cell = row.insertCell(playerIdx + 1);
+            cell.textContent = value.toFixed(1);
+            if (playerIdx < 3) {
+                cell.style.display = '';
+            }
+        });
+    });
+}
+</script>
+{% endblock %}
