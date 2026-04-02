@@ -11,123 +11,129 @@ app = Flask(__name__)
 # Cache for storing fetched data
 stats_cache = {}
 
-
 def get_season_stats(season='2023-24'):
     """Fetch player stats for a given season"""
     if season in stats_cache:
         return stats_cache[season]
-
+    
     # Fetch data from NBA API
     stats = leaguedashplayerstats.LeagueDashPlayerStats(
         season=season,
         per_mode_detailed='PerGame'
     )
-
+    
     df = stats.get_data_frames()[0]
     stats_cache[season] = df
     return df
-
 
 @app.route('/')
 def index():
     """Home page with player stats table"""
     return render_template('index.html')
 
-
 @app.route('/api/players')
 def get_players():
     """API endpoint to fetch player stats"""
     season = request.args.get('season', '2023-24')
-
+    
     try:
         df = get_season_stats(season)
-
+        
         # Select relevant columns
-        columns = ['PLAYER_NAME', 'TEAM_ABBREVIATION', 'GP', 'MIN',
-                   'PTS', 'REB', 'AST', 'STL', 'BLK', 'FG_PCT',
+        columns = ['PLAYER_NAME', 'TEAM_ABBREVIATION', 'GP', 'MIN', 
+                   'PTS', 'REB', 'AST', 'STL', 'BLK', 'FG_PCT', 
                    'FG3_PCT', 'FT_PCT']
-
+        
         df_filtered = df[columns].copy()
-
+        
         # Filter by minimum games played to avoid outliers
         min_games = int(request.args.get('min_games', 20))
         df_filtered = df_filtered[df_filtered['GP'] >= min_games]
-
+        
         # Convert to dict for JSON response
         return jsonify(df_filtered.to_dict('records'))
-
+    
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
 
 @app.route('/api/rankings')
 def get_rankings():
     """API endpoint for custom rankings"""
     season = request.args.get('season', '2023-24')
-
-    # Get weights from query params (default equal weights)
+    
+    # Get weights from query params with fantasy-friendly defaults
     pts_weight = float(request.args.get('pts_weight', 1.0))
-    reb_weight = float(request.args.get('reb_weight', 1.0))
-    ast_weight = float(request.args.get('ast_weight', 1.0))
-    stl_weight = float(request.args.get('stl_weight', 0.5))
-    blk_weight = float(request.args.get('blk_weight', 0.5))
-
+    reb_weight = float(request.args.get('reb_weight', 1.2))
+    ast_weight = float(request.args.get('ast_weight', 1.5))
+    stl_weight = float(request.args.get('stl_weight', 3.0))
+    blk_weight = float(request.args.get('blk_weight', 3.0))
+    fgm_weight = float(request.args.get('fgm_weight', 0.0))
+    fga_weight = float(request.args.get('fga_weight', 0.0))
+    fg3m_weight = float(request.args.get('fg3m_weight', 0.0))
+    ftm_weight = float(request.args.get('ftm_weight', 0.0))
+    fta_weight = float(request.args.get('fta_weight', 0.0))
+    tov_weight = float(request.args.get('tov_weight', 0.0))
+    
     try:
         df = get_season_stats(season)
         df = df[df['GP'] >= 20].copy()
-
-        # Calculate custom score
+        
+        # Calculate custom score with all stats
         df['CUSTOM_SCORE'] = (
             df['PTS'] * pts_weight +
             df['REB'] * reb_weight +
             df['AST'] * ast_weight +
             df['STL'] * stl_weight +
-            df['BLK'] * blk_weight
+            df['BLK'] * blk_weight +
+            df['FGM'] * fgm_weight +
+            df['FGA'] * fga_weight +
+            df['FG3M'] * fg3m_weight +
+            df['FTM'] * ftm_weight +
+            df['FTA'] * fta_weight +
+            df['TOV'] * tov_weight
         )
-
+        
         # Sort by custom score
         df_ranked = df.nlargest(50, 'CUSTOM_SCORE')
-
-        columns = ['PLAYER_NAME', 'TEAM_ABBREVIATION', 'PTS', 'REB',
-                   'AST', 'STL', 'BLK', 'CUSTOM_SCORE']
-
+        
+        columns = ['PLAYER_NAME', 'TEAM_ABBREVIATION', 'MIN', 'PTS', 'REB', 
+                   'AST', 'STL', 'BLK', 'FGM', 'FGA', 'FG3M', 'FTM', 'FTA', 
+                   'TOV', 'CUSTOM_SCORE']
+        
         return jsonify(df_ranked[columns].to_dict('records'))
-
+    
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
 
 @app.route('/compare')
 def compare():
     """Player comparison page"""
     return render_template('compare.html')
 
-
 @app.route('/rankings')
 def rankings():
     """Custom rankings page"""
     return render_template('rankings.html')
-
 
 @app.route('/api/player-comparison')
 def player_comparison():
     """API endpoint for comparing specific players"""
     player_names = request.args.getlist('players')
     season = request.args.get('season', '2023-24')
-
+    
     try:
         df = get_season_stats(season)
         df_players = df[df['PLAYER_NAME'].isin(player_names)]
-
+        
         # Create comparison chart data
         stats_to_compare = ['PTS', 'REB', 'AST', 'STL', 'BLK', 'FG_PCT']
-
+        
         chart_data = {
             'players': player_names,
             'stats': stats_to_compare,
             'values': []
         }
-
+        
         for stat in stats_to_compare:
             values = []
             for player in player_names:
@@ -137,12 +143,11 @@ def player_comparison():
                 else:
                     values.append(0)
             chart_data['values'].append(values)
-
+        
         return jsonify(chart_data)
-
+    
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
 
 if __name__ == '__main__':
     app.run(debug=True)

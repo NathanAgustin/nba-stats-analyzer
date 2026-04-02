@@ -6,11 +6,11 @@
 <div class="row">
     <div class="col-12">
         <h1>Custom Player Rankings</h1>
-        <p class="lead">Adjust the weights to create your own ranking system</p>
-        
+        <p class="lead">Enter fantasy point values for each stat category to create your custom rankings</p>
+
         <div class="card mb-4">
             <div class="card-body">
-                <h5 class="card-title">Stat Weights</h5>
+                <h5 class="card-title">Fantasy Point Values</h5>
                 <div class="row">
                     <div class="col-md-3">
                         <label for="seasonSelect" class="form-label">Season</label>
@@ -21,30 +21,97 @@
                             <option value="2020-21">2020-21</option>
                         </select>
                     </div>
+                    <div class="col-md-9">
+                        <label class="form-label">Quick Presets</label>
+                        <div class="btn-group w-100" role="group">
+                            <button type="button" class="btn btn-outline-secondary"
+                                onclick="loadYahooPreset()">Yahoo!</button>
+                            <button type="button" class="btn btn-outline-secondary"
+                                onclick="loadESPNPreset()">ESPN</button>
+                            <button type="button" class="btn btn-outline-secondary"
+                                onclick="loadDraftKingsPreset()">DraftKings</button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="resetToZero()">Reset
+                                All</button>
+                        </div>
+                    </div>
                 </div>
                 <div class="row mt-3">
+                    <div class="col-md-12">
+                        <h6 class="text-primary">Basic Stats</h6>
+                    </div>
+                </div>
+                <div class="row">
                     <div class="col-md-2">
-                        <label for="ptsWeight" class="form-label">Points: <span id="ptsValue">1.0</span></label>
-                        <input type="range" class="form-range" id="ptsWeight" min="0" max="3" step="0.1" value="1.0" oninput="updateValue('pts')">
+                        <label for="ptsWeight" class="form-label">Points</label>
+                        <input type="number" class="form-control" id="ptsWeight" step="0.1" value="1.0" min="-10"
+                            placeholder="1.0">
                     </div>
                     <div class="col-md-2">
-                        <label for="rebWeight" class="form-label">Rebounds: <span id="rebValue">1.0</span></label>
-                        <input type="range" class="form-range" id="rebWeight" min="0" max="3" step="0.1" value="1.0" oninput="updateValue('reb')">
+                        <label for="rebWeight" class="form-label">Rebounds</label>
+                        <input type="number" class="form-control" id="rebWeight" step="0.1" value="1.2" min="-10"
+                            placeholder="1.2">
                     </div>
                     <div class="col-md-2">
-                        <label for="astWeight" class="form-label">Assists: <span id="astValue">1.0</span></label>
-                        <input type="range" class="form-range" id="astWeight" min="0" max="3" step="0.1" value="1.0" oninput="updateValue('ast')">
+                        <label for="astWeight" class="form-label">Assists</label>
+                        <input type="number" class="form-control" id="astWeight" step="0.1" value="1.5" min="-10"
+                            placeholder="1.5">
                     </div>
                     <div class="col-md-2">
-                        <label for="stlWeight" class="form-label">Steals: <span id="stlValue">0.5</span></label>
-                        <input type="range" class="form-range" id="stlWeight" min="0" max="3" step="0.1" value="0.5" oninput="updateValue('stl')">
+                        <label for="stlWeight" class="form-label">Steals</label>
+                        <input type="number" class="form-control" id="stlWeight" step="0.1" value="3.0" min="-10"
+                            placeholder="3.0">
                     </div>
                     <div class="col-md-2">
-                        <label for="blkWeight" class="form-label">Blocks: <span id="blkValue">0.5</span></label>
-                        <input type="range" class="form-range" id="blkWeight" min="0" max="3" step="0.1" value="0.5" oninput="updateValue('blk')">
+                        <label for="blkWeight" class="form-label">Blocks</label>
+                        <input type="number" class="form-control" id="blkWeight" step="0.1" value="3.0" min="-10"
+                            placeholder="3.0">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="tovWeight" class="form-label">Turnovers</label>
+                        <input type="number" class="form-control" id="tovWeight" step="0.1" value="-1.0" min="-10"
+                            placeholder="-1.0">
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <h6 class="text-primary">Shooting Stats</h6>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-2">
+                        <label for="fgmWeight" class="form-label">FG Made</label>
+                        <input type="number" class="form-control" id="fgmWeight" step="0.1" value="0.0" min="-10"
+                            placeholder="0.0">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="fgaWeight" class="form-label">FG Attempted</label>
+                        <input type="number" class="form-control" id="fgaWeight" step="0.1" value="0.0" min="-10"
+                            placeholder="0.0">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="fg3mWeight" class="form-label">3PT Made</label>
+                        <input type="number" class="form-control" id="fg3mWeight" step="0.1" value="0.0" min="-10"
+                            placeholder="0.0">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="ftmWeight" class="form-label">FT Made</label>
+                        <input type="number" class="form-control" id="ftmWeight" step="0.1" value="0.0" min="-10"
+                            placeholder="0.0">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="ftaWeight" class="form-label">FT Attempted</label>
+                        <input type="number" class="form-control" id="ftaWeight" step="0.1" value="0.0" min="-10"
+                            placeholder="0.0">
                     </div>
                     <div class="col-md-2">
                         <button class="btn btn-primary w-100 mt-4" onclick="loadRankings()">Calculate Rankings</button>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <small class="text-muted">💡 Tip: Use negative values for penalties (e.g., -1.0 for turnovers).
+                            Use 0.0 to ignore a stat.</small>
                     </div>
                 </div>
             </div>
@@ -66,12 +133,19 @@
                             <th>Rank</th>
                             <th>Player</th>
                             <th>Team</th>
+                            <th>MIN</th>
                             <th>PTS</th>
                             <th>REB</th>
                             <th>AST</th>
                             <th>STL</th>
                             <th>BLK</th>
-                            <th>Score</th>
+                            <th>FGM</th>
+                            <th>FGA</th>
+                            <th>3PM</th>
+                            <th>FTM</th>
+                            <th>FTA</th>
+                            <th>TOV</th>
+                            <th>Fantasy Score</th>
                         </tr>
                     </thead>
                     <tbody id="rankingsBody">
@@ -90,99 +164,172 @@
 
 {% block scripts %}
 <script>
-function updateValue(stat) {
-    const slider = document.getElementById(stat + 'Weight');
-    const display = document.getElementById(stat + 'Value');
-    display.textContent = slider.value;
-}
+    // Preset functions for popular fantasy scoring systems
+    function loadYahooPreset() {
+        document.getElementById('ptsWeight').value = 1.0;
+        document.getElementById('rebWeight').value = 1.2;
+        document.getElementById('astWeight').value = 1.5;
+        document.getElementById('stlWeight').value = 3.0;
+        document.getElementById('blkWeight').value = 3.0;
+        document.getElementById('tovWeight').value = -1.0;
+        document.getElementById('fgmWeight').value = 0.0;
+        document.getElementById('fgaWeight').value = 0.0;
+        document.getElementById('fg3mWeight').value = 0.0;
+        document.getElementById('ftmWeight').value = 0.0;
+        document.getElementById('ftaWeight').value = 0.0;
+        loadRankings();
+    }
 
-function loadRankings() {
-    const season = document.getElementById('seasonSelect').value;
-    const ptsWeight = document.getElementById('ptsWeight').value;
-    const rebWeight = document.getElementById('rebWeight').value;
-    const astWeight = document.getElementById('astWeight').value;
-    const stlWeight = document.getElementById('stlWeight').value;
-    const blkWeight = document.getElementById('blkWeight').value;
-    
-    const params = new URLSearchParams({
-        season: season,
-        pts_weight: ptsWeight,
-        reb_weight: rebWeight,
-        ast_weight: astWeight,
-        stl_weight: stlWeight,
-        blk_weight: blkWeight
-    });
-    
-    document.getElementById('loading').style.display = 'block';
-    document.getElementById('rankingsTable').style.display = 'none';
-    document.getElementById('chartDiv').style.display = 'none';
-    
-    fetch(`/api/rankings?${params}`)
-        .then(response => response.json())
-        .then(data => {
-            displayRankings(data);
-            createChart(data.slice(0, 10));
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('rankingsTable').style.display = 'block';
-            document.getElementById('chartDiv').style.display = 'block';
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('loading').style.display = 'none';
-            alert('Error loading rankings. Please try again.');
+    function loadESPNPreset() {
+        document.getElementById('ptsWeight').value = 1.0;
+        document.getElementById('rebWeight').value = 1.0;
+        document.getElementById('astWeight').value = 1.0;
+        document.getElementById('stlWeight').value = 1.0;
+        document.getElementById('blkWeight').value = 1.0;
+        document.getElementById('tovWeight').value = -1.0;
+        document.getElementById('fgmWeight').value = 0.0;
+        document.getElementById('fgaWeight').value = 0.0;
+        document.getElementById('fg3mWeight').value = 0.0;
+        document.getElementById('ftmWeight').value = 0.0;
+        document.getElementById('ftaWeight').value = 0.0;
+        loadRankings();
+    }
+
+    function loadDraftKingsPreset() {
+        document.getElementById('ptsWeight').value = 1.0;
+        document.getElementById('rebWeight').value = 1.25;
+        document.getElementById('astWeight').value = 1.5;
+        document.getElementById('stlWeight').value = 2.0;
+        document.getElementById('blkWeight').value = 2.0;
+        document.getElementById('tovWeight').value = -0.5;
+        document.getElementById('fgmWeight').value = 0.0;
+        document.getElementById('fgaWeight').value = 0.0;
+        document.getElementById('fg3mWeight').value = 0.5;
+        document.getElementById('ftmWeight').value = 0.0;
+        document.getElementById('ftaWeight').value = 0.0;
+        loadRankings();
+    }
+
+    function resetToZero() {
+        document.getElementById('ptsWeight').value = 0.0;
+        document.getElementById('rebWeight').value = 0.0;
+        document.getElementById('astWeight').value = 0.0;
+        document.getElementById('stlWeight').value = 0.0;
+        document.getElementById('blkWeight').value = 0.0;
+        document.getElementById('tovWeight').value = 0.0;
+        document.getElementById('fgmWeight').value = 0.0;
+        document.getElementById('fgaWeight').value = 0.0;
+        document.getElementById('fg3mWeight').value = 0.0;
+        document.getElementById('ftmWeight').value = 0.0;
+        document.getElementById('ftaWeight').value = 0.0;
+    }
+
+    function loadRankings() {
+        const season = document.getElementById('seasonSelect').value;
+        const ptsWeight = document.getElementById('ptsWeight').value;
+        const rebWeight = document.getElementById('rebWeight').value;
+        const astWeight = document.getElementById('astWeight').value;
+        const stlWeight = document.getElementById('stlWeight').value;
+        const blkWeight = document.getElementById('blkWeight').value;
+        const tovWeight = document.getElementById('tovWeight').value;
+        const fgmWeight = document.getElementById('fgmWeight').value;
+        const fgaWeight = document.getElementById('fgaWeight').value;
+        const fg3mWeight = document.getElementById('fg3mWeight').value;
+        const ftmWeight = document.getElementById('ftmWeight').value;
+        const ftaWeight = document.getElementById('ftaWeight').value;
+
+        const params = new URLSearchParams({
+            season: season,
+            pts_weight: ptsWeight,
+            reb_weight: rebWeight,
+            ast_weight: astWeight,
+            stl_weight: stlWeight,
+            blk_weight: blkWeight,
+            tov_weight: tovWeight,
+            fgm_weight: fgmWeight,
+            fga_weight: fgaWeight,
+            fg3m_weight: fg3mWeight,
+            ftm_weight: ftmWeight,
+            fta_weight: ftaWeight
         });
-}
 
-function displayRankings(data) {
-    const tbody = document.getElementById('rankingsBody');
-    tbody.innerHTML = '';
-    
-    data.forEach((player, index) => {
-        const row = tbody.insertRow();
-        row.innerHTML = `
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('rankingsTable').style.display = 'none';
+        document.getElementById('chartDiv').style.display = 'none';
+
+        fetch(`/api/rankings?${params}`)
+            .then(response => response.json())
+            .then(data => {
+                displayRankings(data);
+                createChart(data.slice(0, 10));
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('rankingsTable').style.display = 'block';
+                document.getElementById('chartDiv').style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('loading').style.display = 'none';
+                alert('Error loading rankings. Please try again.');
+            });
+    }
+
+    function displayRankings(data) {
+        const tbody = document.getElementById('rankingsBody');
+        tbody.innerHTML = '';
+
+        data.forEach((player, index) => {
+            const row = tbody.insertRow();
+            row.innerHTML = `
             <td><strong>${index + 1}</strong></td>
             <td>${player.PLAYER_NAME}</td>
             <td>${player.TEAM_ABBREVIATION}</td>
+            <td>${player.MIN.toFixed(1)}</td>
             <td>${player.PTS.toFixed(1)}</td>
             <td>${player.REB.toFixed(1)}</td>
             <td>${player.AST.toFixed(1)}</td>
             <td>${player.STL.toFixed(1)}</td>
             <td>${player.BLK.toFixed(1)}</td>
+            <td>${player.FGM.toFixed(1)}</td>
+            <td>${player.FGA.toFixed(1)}</td>
+            <td>${player.FG3M.toFixed(1)}</td>
+            <td>${player.FTM.toFixed(1)}</td>
+            <td>${player.FTA.toFixed(1)}</td>
+            <td>${player.TOV.toFixed(1)}</td>
             <td><strong>${player.CUSTOM_SCORE.toFixed(2)}</strong></td>
         `;
-    });
-}
+        });
+    }
 
-function createChart(topPlayers) {
-    const playerNames = topPlayers.map(p => p.PLAYER_NAME);
-    const scores = topPlayers.map(p => p.CUSTOM_SCORE);
-    
-    const trace = {
-        x: scores,
-        y: playerNames,
-        type: 'bar',
-        orientation: 'h',
-        marker: {
-            color: 'rgb(55, 83, 109)'
-        }
-    };
-    
-    const layout = {
-        title: 'Top 10 Players by Custom Score',
-        xaxis: { title: 'Custom Score' },
-        yaxis: { 
-            autorange: 'reversed',
-            title: ''
-        },
-        margin: { l: 150 }
-    };
-    
-    Plotly.newPlot('rankingsChart', [trace], layout);
-}
+    function createChart(topPlayers) {
+        const playerNames = topPlayers.map(p => p.PLAYER_NAME);
+        const scores = topPlayers.map(p => p.CUSTOM_SCORE);
 
-// Load rankings on page load
-window.onload = function() {
-    loadRankings();
-};
+        const trace = {
+            x: scores,
+            y: playerNames,
+            type: 'bar',
+            orientation: 'h',
+            marker: {
+                color: 'rgb(55, 83, 109)'
+            }
+        };
+
+        const layout = {
+            title: 'Top 10 Players by Fantasy Score',
+            xaxis: { title: 'Fantasy Score' },
+            yaxis: {
+                autorange: 'reversed',
+                title: ''
+            },
+            margin: { l: 150 }
+        };
+
+        Plotly.newPlot('rankingsChart', [trace], layout);
+    }
+
+    // Load rankings on page load
+    window.onload = function () {
+        loadRankings();
+    };
 </script>
 {% endblock %}
