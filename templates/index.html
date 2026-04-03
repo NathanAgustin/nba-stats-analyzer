@@ -6,7 +6,11 @@
 <div class="row">
     <div class="col-12">
         <h1>NBA Player Statistics</h1>
-        
+        <div class="alert alert-info" id="cacheStatus" style="display: none;">
+            <small><strong>Data Age:</strong> <span id="cacheAge">Loading...</span> | <a href="#"
+                    onclick="refreshData(); return false;">Refresh Now</a></small>
+        </div>
+
         <div class="card mb-4">
             <div class="card-body">
                 <h5 class="card-title">Filters</h5>
@@ -14,6 +18,8 @@
                     <div class="col-md-4">
                         <label for="seasonSelect" class="form-label">Season</label>
                         <select class="form-select" id="seasonSelect">
+                            <option value="2025-26">2025-26 (Current)</option>
+                            <option value="2024-25">2024-25</option>
                             <option value="2023-24">2023-24</option>
                             <option value="2022-23">2022-23</option>
                             <option value="2021-22">2021-22</option>
@@ -69,37 +75,85 @@
 
 {% block scripts %}
 <script>
-let currentData = [];
+    let currentData = [];
 
-function loadStats() {
-    const season = document.getElementById('seasonSelect').value;
-    const minGames = document.getElementById('minGames').value;
-    
-    document.getElementById('loading').style.display = 'block';
-    document.getElementById('statsTable').style.display = 'none';
-    
-    fetch(`/api/players?season=${season}&min_games=${minGames}`)
-        .then(response => response.json())
-        .then(data => {
-            currentData = data;
-            displayStats(data);
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('statsTable').style.display = 'block';
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('loading').style.display = 'none';
-            alert('Error loading stats. Please try again.');
-        });
-}
+    function checkCacheStatus() {
+        fetch('/api/cache-status')
+            .then(response => response.json())
+            .then(status => {
+                const season = document.getElementById('seasonSelect').value;
+                if (status[season]) {
+                    const ageHours = status[season].age_hours;
+                    const ageText = ageHours < 1
+                        ? 'Less than 1 hour ago'
+                        : `${Math.floor(ageHours)} hours ago`;
 
-function displayStats(data) {
-    const tbody = document.getElementById('statsBody');
-    tbody.innerHTML = '';
-    
-    data.forEach(player => {
-        const row = tbody.insertRow();
-        row.innerHTML = `
+                    document.getElementById('cacheAge').textContent = ageText;
+                    document.getElementById('cacheStatus').style.display = 'block';
+
+                    if (status[season].is_stale) {
+                        document.getElementById('cacheStatus').classList.remove('alert-info');
+                        document.getElementById('cacheStatus').classList.add('alert-warning');
+                    }
+                }
+            })
+            .catch(err => console.log('Cache status unavailable'));
+    }
+
+    function refreshData() {
+        const season = document.getElementById('seasonSelect').value;
+
+        if (confirm('Refresh data for ' + season + '? This may take 10-20 seconds.')) {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('statsTable').style.display = 'none';
+
+            fetch(`/api/refresh-cache?season=${season}`)
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success) {
+                        alert('Data refreshed successfully!');
+                        loadStats();
+                        checkCacheStatus();
+                    } else {
+                        alert('Error refreshing data: ' + result.error);
+                    }
+                })
+                .catch(err => {
+                    alert('Error: ' + err);
+                    document.getElementById('loading').style.display = 'none';
+                });
+        }
+    }
+
+    function loadStats() {
+        const season = document.getElementById('seasonSelect').value;
+        const minGames = document.getElementById('minGames').value;
+
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('statsTable').style.display = 'none';
+
+        fetch(`/api/players?season=${season}&min_games=${minGames}`)
+            .then(response => response.json())
+            .then(data => {
+                currentData = data;
+                displayStats(data);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('statsTable').style.display = 'block';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('loading').style.display = 'none';
+                alert('Error loading stats. Please try again.');
+            });
+    }
+
+    function displayStats(data) {
+        const tbody = document.getElementById('statsBody');
+        tbody.innerHTML = '';
+
+        data.forEach(player => {
+            const row = tbody.insertRow();
+            row.innerHTML = `
             <td>${player.PLAYER_NAME}</td>
             <td>${player.TEAM_ABBREVIATION}</td>
             <td>${player.GP}</td>
@@ -113,33 +167,34 @@ function displayStats(data) {
             <td>${(player.FG3_PCT * 100).toFixed(1)}%</td>
             <td>${(player.FT_PCT * 100).toFixed(1)}%</td>
         `;
-    });
-}
+        });
+    }
 
-function sortTable(columnIndex) {
-    const table = document.querySelector('table');
-    const tbody = table.querySelector('tbody');
-    const rows = Array.from(tbody.querySelectorAll('tr'));
-    
-    rows.sort((a, b) => {
-        const aValue = a.cells[columnIndex].textContent;
-        const bValue = b.cells[columnIndex].textContent;
-        
-        const aNum = parseFloat(aValue.replace('%', ''));
-        const bNum = parseFloat(bValue.replace('%', ''));
-        
-        if (!isNaN(aNum) && !isNaN(bNum)) {
-            return bNum - aNum;
-        }
-        return aValue.localeCompare(bValue);
-    });
-    
-    rows.forEach(row => tbody.appendChild(row));
-}
+    function sortTable(columnIndex) {
+        const table = document.querySelector('table');
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
 
-// Load stats on page load
-window.onload = function() {
-    loadStats();
-};
+        rows.sort((a, b) => {
+            const aValue = a.cells[columnIndex].textContent;
+            const bValue = b.cells[columnIndex].textContent;
+
+            const aNum = parseFloat(aValue.replace('%', ''));
+            const bNum = parseFloat(bValue.replace('%', ''));
+
+            if (!isNaN(aNum) && !isNaN(bNum)) {
+                return bNum - aNum;
+            }
+            return aValue.localeCompare(bValue);
+        });
+
+        rows.forEach(row => tbody.appendChild(row));
+    }
+
+    // Load stats on page load
+    window.onload = function () {
+        loadStats();
+        checkCacheStatus();
+    };
 </script>
 {% endblock %}
