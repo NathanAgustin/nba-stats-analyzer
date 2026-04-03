@@ -70,9 +70,15 @@ h1 {
     margin-bottom: 2rem;
 }
 
-#rankingsChart, #comparisonChart {
+#rankingsChart,
+#comparisonChart {
     background-color: white;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.by-tag {
+    color: #aaa;
+    font-size: 1 rem;
 }

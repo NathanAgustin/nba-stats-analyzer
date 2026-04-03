@@ -46,7 +46,7 @@ def index():
 @app.route('/api/players')
 def get_players():
     """API endpoint to fetch player stats"""
-    season = request.args.get('season', '2023-24')
+    season = request.args.get('season', '2025-26')
 
     try:
         df = get_season_stats(season)
@@ -62,6 +62,12 @@ def get_players():
         min_games = int(request.args.get('min_games', 20))
         df_filtered = df_filtered[df_filtered['GP'] >= min_games]
 
+        # Sort by points per game (descending - highest scorers first)
+        df_filtered = df_filtered.sort_values('PTS', ascending=False)
+
+        # Reset index to maintain sort order
+        df_filtered = df_filtered.reset_index(drop=True)
+
         # Convert to dict for JSON response
         return jsonify(df_filtered.to_dict('records'))
 
@@ -72,7 +78,7 @@ def get_players():
 @app.route('/api/rankings')
 def get_rankings():
     """API endpoint for custom rankings"""
-    season = request.args.get('season', '2023-24')
+    season = request.args.get('season', '2025-26')
 
     # Get weights from query params with fantasy-friendly defaults
     pts_weight = float(request.args.get('pts_weight', 1.0))
@@ -107,9 +113,9 @@ def get_rankings():
         )
 
         # Sort by custom score
-        df_ranked = df.nlargest(50, 'CUSTOM_SCORE')
+        df_ranked = df.nlargest(100, 'CUSTOM_SCORE')
 
-        columns = ['PLAYER_NAME', 'TEAM_ABBREVIATION', 'MIN', 'PTS', 'REB',
+        columns = ['PLAYER_NAME', 'TEAM_ABBREVIATION', 'GP', 'MIN', 'PTS', 'REB',
                    'AST', 'STL', 'BLK', 'FGM', 'FGA', 'FG3M', 'FTM', 'FTA',
                    'TOV', 'CUSTOM_SCORE']
 
