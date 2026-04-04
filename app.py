@@ -7,6 +7,7 @@ import plotly.express as px
 import json
 from datetime import datetime, timedelta
 
+
 app = Flask(__name__)
 
 # Cache for storing fetched data with timestamps
@@ -14,7 +15,7 @@ stats_cache = {}
 cache_timestamps = {}
 
 
-def get_season_stats(season='2023-24', force_refresh=False):
+def get_season_stats(season='2025-26', force_refresh=False):
     """Fetch player stats for a given season"""
     # Check if cache is stale (older than 24 hours)
     if season in cache_timestamps:
@@ -141,7 +142,7 @@ def rankings():
 def player_comparison():
     """API endpoint for comparing specific players"""
     player_names = request.args.getlist('players')
-    season = request.args.get('season', '2023-24')
+    season = request.args.get('season', '2025-26')
 
     try:
         df = get_season_stats(season)
@@ -176,7 +177,7 @@ def player_comparison():
 def refresh_cache():
     """Clear cache and force fresh data fetch"""
     global stats_cache, cache_timestamps
-    season = request.args.get('season', '2023-24')
+    season = request.args.get('season', '2025-26')
 
     try:
         # Clear the specific season from cache

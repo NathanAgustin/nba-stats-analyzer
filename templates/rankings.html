@@ -21,6 +21,12 @@
                             <option value="2022-23">2022-23</option>
                             <option value="2021-22">2021-22</option>
                             <option value="2020-21">2020-21</option>
+                            <option value="2019-20">2019-20</option>
+                            <option value="2018-19">2018-19</option>
+                            <option value="2017-18">2017-18</option>
+                            <option value="2016-17">2016-17</option>
+                            <option value="2015-16">2015-16</option>
+                            <option value="2014-15">2014-15</option>
                         </select>
                     </div>
                     <div class="col-md-9">
@@ -30,8 +36,6 @@
                                 onclick="loadYahooPreset()">Yahoo!</button>
                             <button type="button" class="btn btn-outline-secondary"
                                 onclick="loadESPNPreset()">ESPN</button>
-                            <button type="button" class="btn btn-outline-secondary"
-                                onclick="loadDraftKingsPreset()">DraftKings</button>
                             <button type="button" class="btn btn-outline-secondary" onclick="resetToZero()">Reset
                                 All</button>
                         </div>
@@ -46,32 +50,32 @@
                     <div class="col-md-2">
                         <label for="ptsWeight" class="form-label">Points</label>
                         <input type="number" class="form-control" id="ptsWeight" step="0.1" value="1.0" min="-10"
-                            placeholder="1.0">
+                            placeholder="1.0" onblur="formatFloat(this)">
                     </div>
                     <div class="col-md-2">
                         <label for="rebWeight" class="form-label">Rebounds</label>
                         <input type="number" class="form-control" id="rebWeight" step="0.1" value="1.2" min="-10"
-                            placeholder="1.2">
+                            placeholder="1.2" onblur="formatFloat(this)">
                     </div>
                     <div class="col-md-2">
                         <label for="astWeight" class="form-label">Assists</label>
                         <input type="number" class="form-control" id="astWeight" step="0.1" value="1.5" min="-10"
-                            placeholder="1.5">
+                            placeholder="1.5" onblur="formatFloat(this)">
                     </div>
                     <div class="col-md-2">
                         <label for="stlWeight" class="form-label">Steals</label>
                         <input type="number" class="form-control" id="stlWeight" step="0.1" value="3.0" min="-10"
-                            placeholder="3.0">
+                            placeholder="3.0" onblur="formatFloat(this)">
                     </div>
                     <div class="col-md-2">
                         <label for="blkWeight" class="form-label">Blocks</label>
                         <input type="number" class="form-control" id="blkWeight" step="0.1" value="3.0" min="-10"
-                            placeholder="3.0">
+                            placeholder="3.0" onblur="formatFloat(this)">
                     </div>
                     <div class="col-md-2">
                         <label for="tovWeight" class="form-label">Turnovers</label>
                         <input type="number" class="form-control" id="tovWeight" step="0.1" value="-1.0" min="-10"
-                            placeholder="-1.0">
+                            placeholder="-1.0" onblur="formatFloat(this)">
                     </div>
                 </div>
 
@@ -84,27 +88,27 @@
                     <div class="col-md-2">
                         <label for="fgmWeight" class="form-label">FG Made</label>
                         <input type="number" class="form-control" id="fgmWeight" step="0.1" value="0.0" min="-10"
-                            placeholder="0.0">
+                            placeholder="0.0" onblur="formatFloat(this)">
                     </div>
                     <div class="col-md-2">
                         <label for="fgaWeight" class="form-label">FG Attempted</label>
                         <input type="number" class="form-control" id="fgaWeight" step="0.1" value="0.0" min="-10"
-                            placeholder="0.0">
+                            placeholder="0.0" onblur="formatFloat(this)">
                     </div>
                     <div class="col-md-2">
                         <label for="fg3mWeight" class="form-label">3PT Made</label>
                         <input type="number" class="form-control" id="fg3mWeight" step="0.1" value="0.0" min="-10"
-                            placeholder="0.0">
+                            placeholder="0.0" onblur="formatFloat(this)">
                     </div>
                     <div class="col-md-2">
                         <label for="ftmWeight" class="form-label">FT Made</label>
                         <input type="number" class="form-control" id="ftmWeight" step="0.1" value="0.0" min="-10"
-                            placeholder="0.0">
+                            placeholder="0.0" onblur="formatFloat(this)">
                     </div>
                     <div class="col-md-2">
                         <label for="ftaWeight" class="form-label">FT Attempted</label>
                         <input type="number" class="form-control" id="ftaWeight" step="0.1" value="0.0" min="-10"
-                            placeholder="0.0">
+                            placeholder="0.0" onblur="formatFloat(this)">
                     </div>
                     <div class="col-md-2">
                         <button class="btn btn-primary w-100 mt-4" onclick="loadRankings()">Calculate Rankings</button>
@@ -167,64 +171,72 @@
 
 {% block scripts %}
 <script>
+    function formatFloat(input) {
+        const value = parseFloat(input.value);
+        if (!isNaN(value)) {
+            input.value = value.toFixed(1);
+        }
+    }
+    // Preset functions for popular fantasy scoring systems
     // Preset functions for popular fantasy scoring systems
     function loadYahooPreset() {
-        document.getElementById('ptsWeight').value = 1.0;
-        document.getElementById('rebWeight').value = 1.2;
-        document.getElementById('astWeight').value = 1.5;
-        document.getElementById('stlWeight').value = 3.0;
-        document.getElementById('blkWeight').value = 3.0;
-        document.getElementById('tovWeight').value = -1.0;
-        document.getElementById('fgmWeight').value = 0.0;
-        document.getElementById('fgaWeight').value = 0.0;
-        document.getElementById('fg3mWeight').value = 0.0;
-        document.getElementById('ftmWeight').value = 0.0;
-        document.getElementById('ftaWeight').value = 0.0;
+        document.getElementById('ptsWeight').value = '1.0';
+        document.getElementById('rebWeight').value = '1.2';
+        document.getElementById('astWeight').value = '1.5';
+        document.getElementById('stlWeight').value = '3.0';
+        document.getElementById('blkWeight').value = '3.0';
+        document.getElementById('tovWeight').value = '-1.0';
+        document.getElementById('fgmWeight').value = '0.0';
+        document.getElementById('fgaWeight').value = '0.0';
+        document.getElementById('fg3mWeight').value = '0.0';
+        document.getElementById('ftmWeight').value = '0.0';
+        document.getElementById('ftaWeight').value = '0.0';
         loadRankings();
     }
 
     function loadESPNPreset() {
-        document.getElementById('ptsWeight').value = 1.0;
-        document.getElementById('rebWeight').value = 1.0;
-        document.getElementById('astWeight').value = 1.0;
-        document.getElementById('stlWeight').value = 1.0;
-        document.getElementById('blkWeight').value = 1.0;
-        document.getElementById('tovWeight').value = -1.0;
-        document.getElementById('fgmWeight').value = 0.0;
-        document.getElementById('fgaWeight').value = 0.0;
-        document.getElementById('fg3mWeight').value = 0.0;
-        document.getElementById('ftmWeight').value = 0.0;
-        document.getElementById('ftaWeight').value = 0.0;
+        document.getElementById('ptsWeight').value = '1.0';
+        document.getElementById('rebWeight').value = '1.0';
+        document.getElementById('astWeight').value = '1.0';
+        document.getElementById('stlWeight').value = '1.0';
+        document.getElementById('blkWeight').value = '1.0';
+        document.getElementById('tovWeight').value = '-1.0';
+        document.getElementById('fgmWeight').value = '0.0';
+        document.getElementById('fgaWeight').value = '0.0';
+        document.getElementById('fg3mWeight').value = '0.0';
+        document.getElementById('ftmWeight').value = '0.0';
+        document.getElementById('ftaWeight').value = '0.0';
         loadRankings();
     }
 
     function loadDraftKingsPreset() {
-        document.getElementById('ptsWeight').value = 1.0;
-        document.getElementById('rebWeight').value = 1.25;
-        document.getElementById('astWeight').value = 1.5;
-        document.getElementById('stlWeight').value = 2.0;
-        document.getElementById('blkWeight').value = 2.0;
-        document.getElementById('tovWeight').value = -0.5;
-        document.getElementById('fgmWeight').value = 0.0;
-        document.getElementById('fgaWeight').value = 0.0;
-        document.getElementById('fg3mWeight').value = 0.5;
-        document.getElementById('ftmWeight').value = 0.0;
-        document.getElementById('ftaWeight').value = 0.0;
+        document.getElementById('ptsWeight').value = '1.0';
+        document.getElementById('rebWeight').value = '1.25';
+        document.getElementById('astWeight').value = '1.5';
+        document.getElementById('stlWeight').value = '2.0';
+        document.getElementById('blkWeight').value = '2.0';
+        document.getElementById('tovWeight').value = '-0.5';
+        document.getElementById('fgmWeight').value = '0.0';
+        document.getElementById('fgaWeight').value = '0.0';
+        document.getElementById('fg3mWeight').value = '0.5';
+        document.getElementById('ftmWeight').value = '0.0';
+        document.getElementById('ftaWeight').value = '0.0';
         loadRankings();
     }
 
+
     function resetToZero() {
-        document.getElementById('ptsWeight').value = 0.0;
-        document.getElementById('rebWeight').value = 0.0;
-        document.getElementById('astWeight').value = 0.0;
-        document.getElementById('stlWeight').value = 0.0;
-        document.getElementById('blkWeight').value = 0.0;
-        document.getElementById('tovWeight').value = 0.0;
-        document.getElementById('fgmWeight').value = 0.0;
-        document.getElementById('fgaWeight').value = 0.0;
-        document.getElementById('fg3mWeight').value = 0.0;
-        document.getElementById('ftmWeight').value = 0.0;
-        document.getElementById('ftaWeight').value = 0.0;
+        document.getElementById('ptsWeight').value = '0.0';
+        document.getElementById('rebWeight').value = '0.0';
+        document.getElementById('astWeight').value = '0.0';
+        document.getElementById('stlWeight').value = '0.0';
+        document.getElementById('blkWeight').value = '0.0';
+        document.getElementById('tovWeight').value = '0.0';
+        document.getElementById('fgmWeight').value = '0.0';
+        document.getElementById('fgaWeight').value = '0.0';
+        document.getElementById('fg3mWeight').value = '0.0';
+        document.getElementById('ftmWeight').value = '0.0';
+        document.getElementById('ftaWeight').value = '0.0';
     }
 
     function loadRankings() {
