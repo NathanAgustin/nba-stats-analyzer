@@ -53,7 +53,7 @@ def get_players():
         df = get_season_stats(season)
 
         # Select relevant columns
-        columns = ['PLAYER_NAME', 'TEAM_ABBREVIATION', 'GP', 'MIN',
+        columns = ['PLAYER_ID', 'PLAYER_NAME', 'TEAM_ABBREVIATION', 'GP', 'MIN',
                    'PTS', 'REB', 'AST', 'STL', 'BLK', 'FG_PCT',
                    'FG3_PCT', 'FT_PCT']
 
@@ -149,7 +149,8 @@ def player_comparison():
         df_players = df[df['PLAYER_NAME'].isin(player_names)]
 
         # Create comparison chart data
-        stats_to_compare = ['PTS', 'REB', 'AST', 'STL', 'BLK', 'FG_PCT']
+        stats_to_compare = ['PTS', 'REB', 'AST', 'STL', 'BLK', 'FGM',
+                            'FGA', 'FG3M', 'FTM', 'FTA', 'TOV']
 
         chart_data = {
             'players': player_names,

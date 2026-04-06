@@ -159,8 +159,19 @@
 
         data.forEach(player => {
             const row = tbody.insertRow();
+            const imageUrl = `https://cdn.nba.com/headshots/nba/latest/1040x760/${player.PLAYER_ID}.png`;
+            const fallbackImage = 'https://cdn.nba.com/headshots/nba/latest/1040x760/fallback.png';
+
             row.innerHTML = `
-            <td>${player.PLAYER_NAME}</td>
+            <td>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <img src="${imageUrl}" 
+                         onerror="this.src='${fallbackImage}'" 
+                         alt="${player.PLAYER_NAME}"
+                         style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #ddd;">
+                    <span>${player.PLAYER_NAME}</span>
+                </div>
+            </td>
             <td>${player.TEAM_ABBREVIATION}</td>
             <td>${player.GP}</td>
             <td>${player.MIN.toFixed(1)}</td>
