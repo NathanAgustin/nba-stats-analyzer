@@ -1,17 +1,18 @@
 {% extends "base.html" %}
 
 {% block title %}Custom Rankings - NBA Stats Analyzer{% endblock %}
+{% block nav_rankings %}active{% endblock %}
 
 {% block content %}
-<div class="row">
+<div class="row fade-in">
     <div class="col-12">
-        <h1>Custom Player Rankings</h1>
+        <h1><i class="bi bi-trophy"></i> Custom Player Rankings</h1>
         <p class="lead">Enter fantasy point values for each stat category to create your custom rankings</p>
 
-        <div class="card mb-4">
+        <div class="card">
             <div class="card-body">
-                <h5 class="card-title">Fantasy Point Values</h5>
-                <div class="row">
+                <h5 class="card-title"><i class="bi bi-sliders"></i> Fantasy Point Values</h5>
+                <div class="row g-3">
                     <div class="col-md-3">
                         <label for="seasonSelect" class="form-label">Season</label>
                         <select class="form-select" id="seasonSelect">
@@ -36,17 +37,19 @@
                                 onclick="loadYahooPreset()">Yahoo!</button>
                             <button type="button" class="btn btn-outline-secondary"
                                 onclick="loadESPNPreset()">ESPN</button>
-                            <button type="button" class="btn btn-outline-secondary" onclick="resetToZero()">Reset
-                                All</button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="resetToZero()">
+                                <i class="bi bi-arrow-counterclockwise"></i> Reset All
+                            </button>
                         </div>
                     </div>
                 </div>
-                <div class="row mt-3">
-                    <div class="col-md-12">
-                        <h6 class="text-primary">Basic Stats</h6>
+
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h6><i class="bi bi-graph-up"></i> Basic Stats</h6>
                     </div>
                 </div>
-                <div class="row">
+                <div class="row g-2">
                     <div class="col-md-2">
                         <label for="ptsWeight" class="form-label">Points</label>
                         <input type="number" class="form-control" id="ptsWeight" step="0.1" value="1.0" min="-10"
@@ -79,12 +82,12 @@
                     </div>
                 </div>
 
-                <div class="row mt-3">
-                    <div class="col-md-12">
-                        <h6 class="text-primary">Shooting Stats</h6>
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h6><i class="bi bi-bullseye"></i> Shooting Stats</h6>
                     </div>
                 </div>
-                <div class="row">
+                <div class="row g-2 align-items-end">
                     <div class="col-md-2">
                         <label for="fgmWeight" class="form-label">FG Made</label>
                         <input type="number" class="form-control" id="fgmWeight" step="0.1" value="0.0" min="-10"
@@ -111,27 +114,31 @@
                             placeholder="0.0" onblur="formatFloat(this)">
                     </div>
                     <div class="col-md-2">
-                        <button class="btn btn-primary w-100 mt-4" onclick="loadRankings()">Calculate Rankings</button>
+                        <button class="btn btn-primary w-100" onclick="loadRankings()">
+                            <i class="bi bi-calculator"></i> Calculate
+                        </button>
                     </div>
                 </div>
-                <div class="row mt-2">
+                <div class="row mt-3">
                     <div class="col-12">
-                        <small class="text-muted">💡 Tip: Use negative values for penalties (e.g., -1.0 for turnovers).
-                            Use 0.0 to ignore a stat.</small>
+                        <small class="text-muted">
+                            <i class="bi bi-lightbulb"></i>
+                            Tip: Use negative values for penalties (e.g., -1.0 for turnovers). Use 0.0 to ignore a stat.
+                        </small>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="loading" class="text-center" style="display: none;">
+        <div id="loading" class="text-center py-5" style="display: none;">
             <div class="spinner-border" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
-            <p>Calculating rankings...</p>
+            <p>Calculating rankings&hellip;</p>
         </div>
 
         <div id="rankingsTable" style="display: none;">
-            <h3>Top 100 Players</h3>
+            <h3><i class="bi bi-list-ol"></i> Top 100 Players</h3>
             <div class="table-responsive">
                 <table class="table table-striped table-hover">
                     <thead>
@@ -162,7 +169,7 @@
         </div>
 
         <div id="chartDiv" style="display: none; margin-top: 30px;">
-            <h3>Top 10 Visualization</h3>
+            <h3><i class="bi bi-bar-chart-fill"></i> Top 10 Visualization</h3>
             <div id="rankingsChart"></div>
         </div>
     </div>
@@ -177,8 +184,7 @@
             input.value = value.toFixed(1);
         }
     }
-    // Preset functions for popular fantasy scoring systems
-    // Preset functions for popular fantasy scoring systems
+
     function loadYahooPreset() {
         document.getElementById('ptsWeight').value = '0.0';
         document.getElementById('rebWeight').value = '1.0';
@@ -223,7 +229,6 @@
         document.getElementById('ftaWeight').value = '0.0';
         loadRankings();
     }
-
 
     function resetToZero() {
         document.getElementById('ptsWeight').value = '0.0';
@@ -294,6 +299,11 @@
 
         data.forEach((player, index) => {
             const row = tbody.insertRow();
+
+            if (index === 0) row.classList.add('rank-gold');
+            else if (index === 1) row.classList.add('rank-silver');
+            else if (index === 2) row.classList.add('rank-bronze');
+
             row.innerHTML = `
             <td><strong>${index + 1}</strong></td>
             <td>${player.PLAYER_NAME}</td>
@@ -311,7 +321,7 @@
             <td>${player.FTM.toFixed(1)}</td>
             <td>${player.FTA.toFixed(1)}</td>
             <td>${player.TOV.toFixed(1)}</td>
-            <td><strong>${player.CUSTOM_SCORE.toFixed(2)}</strong></td>
+            <td><span class="fantasy-score">${player.CUSTOM_SCORE.toFixed(2)}</span></td>
         `;
         });
     }
@@ -326,24 +336,42 @@
             type: 'bar',
             orientation: 'h',
             marker: {
-                color: 'rgb(55, 83, 109)'
+                color: scores.map((s, i) => {
+                    const t = i / (scores.length - 1);
+                    const r = Math.round(240 - t * 30);
+                    const g = Math.round(136 - t * 50);
+                    const b = Math.round(62 + t * 20);
+                    return `rgb(${r}, ${g}, ${b})`;
+                }),
+                line: { color: 'rgba(255,255,255,0.1)', width: 1 }
             }
         };
 
         const layout = {
-            title: 'Top 10 Players by Fantasy Score',
-            xaxis: { title: 'Fantasy Score' },
+            title: {
+                text: 'Top 10 Players by Fantasy Score',
+                font: { color: '#e6edf3', size: 16, family: 'Inter' }
+            },
+            xaxis: {
+                title: { text: 'Fantasy Score', font: { color: '#8b949e' } },
+                tickfont: { color: '#8b949e' },
+                gridcolor: '#30363d',
+                zerolinecolor: '#30363d'
+            },
             yaxis: {
                 autorange: 'reversed',
-                title: ''
+                title: '',
+                tickfont: { color: '#e6edf3' }
             },
-            margin: { l: 150 }
+            margin: { l: 150, r: 30, t: 50, b: 50 },
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { family: 'Inter' }
         };
 
-        Plotly.newPlot('rankingsChart', [trace], layout);
+        Plotly.newPlot('rankingsChart', [trace], layout, { responsive: true });
     }
 
-    // Load rankings on page load
     window.onload = function () {
         loadRankings();
     };
