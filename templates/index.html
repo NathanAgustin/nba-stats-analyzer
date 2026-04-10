@@ -1,20 +1,29 @@
 {% extends "base.html" %}
 
 {% block title %}Player Stats - NBA Stats Analyzer{% endblock %}
+{% block nav_stats %}active{% endblock %}
 
 {% block content %}
-<div class="row">
+<div class="row fade-in">
     <div class="col-12">
-        <h1>NBA Player Statistics</h1>
+        <h1><i class="bi bi-bar-chart-line"></i> NBA Player Statistics</h1>
+        <p class="lead">Browse per-game averages for every player across recent seasons</p>
+
         <div class="alert alert-info" id="cacheStatus" style="display: none;">
-            <small><strong>Data Age:</strong> <span id="cacheAge">Loading...</span> | <a href="#"
-                    onclick="refreshData(); return false;">Refresh Now</a></small>
+            <small>
+                <i class="bi bi-clock-history"></i>
+                <strong>Data Age:</strong> <span id="cacheAge">Loading...</span>
+                &middot;
+                <a href="#" onclick="refreshData(); return false;">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh Now
+                </a>
+            </small>
         </div>
 
-        <div class="card mb-4">
+        <div class="card">
             <div class="card-body">
-                <h5 class="card-title">Filters</h5>
-                <div class="row">
+                <h5 class="card-title"><i class="bi bi-funnel"></i> Filters</h5>
+                <div class="row g-3 align-items-end">
                     <div class="col-md-4">
                         <label for="seasonSelect" class="form-label">Season</label>
                         <select class="form-select" id="seasonSelect">
@@ -37,18 +46,19 @@
                         <input type="number" class="form-control" id="minGames" value="20" min="1">
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label">&nbsp;</label>
-                        <button class="btn btn-primary w-100" onclick="loadStats()">Load Stats</button>
+                        <button class="btn btn-primary w-100" onclick="loadStats()">
+                            <i class="bi bi-search"></i> Load Stats
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div id="loading" class="text-center" style="display: none;">
+        <div id="loading" class="text-center py-5" style="display: none;">
             <div class="spinner-border" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
-            <p>Fetching NBA stats...</p>
+            <p>Fetching NBA stats&hellip;</p>
         </div>
 
         <div id="statsTable" style="display: none;">
@@ -168,7 +178,7 @@
                     <img src="${imageUrl}" 
                          onerror="this.src='${fallbackImage}'" 
                          alt="${player.PLAYER_NAME}"
-                         style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #ddd;">
+                         class="player-avatar">
                     <span>${player.PLAYER_NAME}</span>
                 </div>
             </td>
@@ -208,7 +218,6 @@
         rows.forEach(row => tbody.appendChild(row));
     }
 
-    // Load stats on page load
     window.onload = function () {
         loadStats();
         checkCacheStatus();

@@ -1,16 +1,17 @@
 {% extends "base.html" %}
 
 {% block title %}Compare Players - NBA Stats Analyzer{% endblock %}
+{% block nav_compare %}active{% endblock %}
 
 {% block content %}
-<div class="row">
+<div class="row fade-in">
     <div class="col-12">
-        <h1>Compare Players</h1>
+        <h1><i class="bi bi-people"></i> Compare Players</h1>
         <p class="lead">Select players to compare their stats side-by-side</p>
 
-        <div class="card mb-4">
+        <div class="card">
             <div class="card-body">
-                <div class="row">
+                <div class="row g-3">
                     <div class="col-md-4">
                         <label for="seasonSelect" class="form-label">Season</label>
                         <select class="form-select" id="seasonSelect">
@@ -30,34 +31,43 @@
                     </div>
                     <div class="col-md-8">
                         <label for="playerSearch" class="form-label">Search Players</label>
-                        <input type="text" class="form-control" id="playerSearch" placeholder="Type player name...">
+                        <div class="position-relative">
+                            <input type="text" class="form-control" id="playerSearch"
+                                placeholder="Type a player name...">
+                            <div id="playerSuggestions" class="list-group mt-1"
+                                style="display: none; max-height: 300px; overflow-y: auto;">
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div class="row mt-3">
                     <div class="col-12">
-                        <h6>Selected Players:</h6>
+                        <label class="form-label">Selected Players</label>
                         <div id="selectedPlayers" class="d-flex flex-wrap gap-2 mb-3">
-                            <span class="text-muted">No players selected</span>
+                            <span class="text-muted" style="font-size: 0.9rem;">No players selected</span>
                         </div>
-                        <button class="btn btn-primary" onclick="compareSelected()">Compare Selected</button>
-                        <button class="btn btn-secondary" onclick="clearSelection()">Clear</button>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary" onclick="compareSelected()">
+                                <i class="bi bi-arrow-left-right"></i> Compare Selected
+                            </button>
+                            <button class="btn btn-secondary" onclick="clearSelection()">
+                                <i class="bi bi-x-circle"></i> Clear
+                            </button>
+                        </div>
                     </div>
-                </div>
-
-                <div id="playerSuggestions" class="list-group mt-2"
-                    style="display: none; max-height: 300px; overflow-y: auto;">
                 </div>
             </div>
         </div>
 
-        <div id="loading" class="text-center" style="display: none;">
+        <div id="loading" class="text-center py-5" style="display: none;">
             <div class="spinner-border" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
         </div>
 
         <div id="comparisonResults" style="display: none;">
+            <div id="comparisonChart" class="mb-4"></div>
 
             <div class="table-responsive mt-4">
                 <table class="table table-bordered">
@@ -73,8 +83,6 @@
                     </tbody>
                 </table>
             </div>
-            <div class="table-responsive mb-4"></div>
-            <div id="comparisonChart" class="mb-4"></div>
         </div>
     </div>
 </div>
@@ -85,7 +93,6 @@
     let allPlayers = [];
     let selectedPlayers = [];
 
-    // Load player list on page load
     window.onload = function () {
         loadPlayerList();
     };
@@ -120,7 +127,7 @@
                 suggestions.innerHTML = matches.map(p => `
                 <a href="#" class="list-group-item list-group-item-action" 
                    onclick="addPlayer('${p.PLAYER_NAME}'); return false;">
-                    ${p.PLAYER_NAME} - ${p.TEAM_ABBREVIATION}
+                    ${p.PLAYER_NAME} &mdash; ${p.TEAM_ABBREVIATION}
                 </a>
             `).join('');
                 suggestions.style.display = 'block';
@@ -154,13 +161,13 @@
         const container = document.getElementById('selectedPlayers');
 
         if (selectedPlayers.length === 0) {
-            container.innerHTML = '<span class="text-muted">No players selected</span>';
+            container.innerHTML = '<span class="text-muted" style="font-size: 0.9rem;">No players selected</span>';
             return;
         }
 
         container.innerHTML = selectedPlayers.map(p => `
         <span class="badge bg-primary">
-            ${p} <span onclick="removePlayer('${p}')" style="cursor: pointer;">×</span>
+            ${p} <span onclick="removePlayer('${p}')" style="cursor: pointer;">&times;</span>
         </span>
     `).join('');
     }
@@ -199,30 +206,59 @@
             });
     }
 
+    const chartColors = [
+        'rgba(240, 136, 62, 0.6)',
+        'rgba(88, 166, 255, 0.6)',
+        'rgba(63, 185, 80, 0.6)'
+    ];
+    const chartBorderColors = [
+        'rgba(240, 136, 62, 1)',
+        'rgba(88, 166, 255, 1)',
+        'rgba(63, 185, 80, 1)'
+    ];
+
     function displayComparison(data) {
-        // Create radar chart
         const traces = data.players.map((player, idx) => ({
             type: 'scatterpolar',
             r: data.values.map(statValues => statValues[idx]),
             theta: data.stats,
             fill: 'toself',
-            name: player
+            name: player,
+            fillcolor: chartColors[idx],
+            line: { color: chartBorderColors[idx], width: 2 }
         }));
 
         const layout = {
             polar: {
+                bgcolor: 'rgba(0,0,0,0)',
                 radialaxis: {
                     visible: true,
-                    range: [0, Math.max(...data.values.flat()) * 1.2]
+                    range: [0, Math.max(...data.values.flat()) * 1.2],
+                    tickfont: { color: '#8b949e', size: 10 },
+                    gridcolor: '#30363d'
+                },
+                angularaxis: {
+                    tickfont: { color: '#e6edf3', size: 12 },
+                    gridcolor: '#30363d',
+                    linecolor: '#30363d'
                 }
             },
             showlegend: true,
-            title: 'Player Stats Comparison'
+            legend: {
+                font: { color: '#e6edf3', family: 'Inter' },
+                bgcolor: 'rgba(0,0,0,0)'
+            },
+            title: {
+                text: 'Player Stats Comparison',
+                font: { color: '#e6edf3', size: 16, family: 'Inter' }
+            },
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { family: 'Inter' }
         };
 
-        Plotly.newPlot('comparisonChart', traces, layout);
+        Plotly.newPlot('comparisonChart', traces, layout, { responsive: true });
 
-        // Update table headers
         data.players.forEach((player, idx) => {
             const header = document.getElementById(`player${idx + 1}Header`);
             if (header) {
@@ -231,7 +267,6 @@
             }
         });
 
-        // Create comparison table
         const tbody = document.getElementById('comparisonTable');
         tbody.innerHTML = '';
 
@@ -239,9 +274,15 @@
             const row = tbody.insertRow();
             row.insertCell(0).innerHTML = `<strong>${stat}</strong>`;
 
-            data.values[statIdx].forEach((value, playerIdx) => {
+            const values = data.values[statIdx];
+            const maxVal = Math.max(...values);
+
+            values.forEach((value, playerIdx) => {
                 const cell = row.insertCell(playerIdx + 1);
                 cell.textContent = value.toFixed(1);
+                if (value === maxVal && values.filter(v => v === maxVal).length === 1) {
+                    cell.classList.add('stat-best');
+                }
                 if (playerIdx < 3) {
                     cell.style.display = '';
                 }
