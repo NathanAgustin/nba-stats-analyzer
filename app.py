@@ -5,6 +5,8 @@ from nba_api.stats.static import players
 import plotly.graph_objects as go
 import plotly.express as px
 import json
+import time
+import requests as requests_lib
 from datetime import datetime, timedelta
 
 
@@ -13,6 +15,12 @@ app = Flask(__name__)
 # Cache for storing fetched data with timestamps
 stats_cache = {}
 cache_timestamps = {}
+
+# How long a single attempt at the NBA API is allowed to take before we
+# give up on it. This is deliberately well under gunicorn's worker timeout
+# so a slow/blocked upstream call can't hang the whole server.
+NBA_API_TIMEOUT = 15
+NBA_API_RETRIES = 2
 
 
 def get_season_stats(season='2025-26', force_refresh=False):
@@ -26,16 +34,41 @@ def get_season_stats(season='2025-26', force_refresh=False):
     if season in stats_cache and not force_refresh:
         return stats_cache[season]
 
-    # Fetch data from NBA API
-    stats = leaguedashplayerstats.LeagueDashPlayerStats(
-        season=season,
-        per_mode_detailed='PerGame'
-    )
+    # Fetch data from NBA API, with a short timeout and a couple of quick
+    # retries. stats.nba.com is known to be slow/rate-limit cloud IPs, and
+    # without a timeout a single hung request can block the whole app.
+    last_error = None
+    for attempt in range(NBA_API_RETRIES + 1):
+        try:
+            stats = leaguedashplayerstats.LeagueDashPlayerStats(
+                season=season,
+                per_mode_detailed='PerGame',
+                timeout=NBA_API_TIMEOUT
+            )
+            df = stats.get_data_frames()[0]
+            stats_cache[season] = df
+            cache_timestamps[season] = datetime.now()
+            return df
+        except (requests_lib.exceptions.Timeout,
+                requests_lib.exceptions.ConnectionError) as e:
+            last_error = e
+            if attempt < NBA_API_RETRIES:
+                time.sleep(1)
+            continue
+        except Exception as e:
+            # Non-network errors (bad season string, parsing issues, etc.)
+            # aren't worth retrying.
+            last_error = e
+            break
 
-    df = stats.get_data_frames()[0]
-    stats_cache[season] = df
-    cache_timestamps[season] = datetime.now()
-    return df
+    # All attempts failed. If we have stale cached data, serve that instead
+    # of taking the whole page down - better a slightly old table than none.
+    if season in stats_cache:
+        return stats_cache[season]
+
+    raise RuntimeError(
+        f"Couldn't reach the NBA stats API for season {season}: {last_error}"
+    )
 
 
 @app.route('/')
@@ -215,4 +248,7 @@ def cache_status():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # threaded=True so a slow NBA API call doesn't block other requests
+    # during local development (mirrors the gunicorn --threads setting
+    # used in production, see render.yaml).
+    app.run(debug=True, threaded=True)
