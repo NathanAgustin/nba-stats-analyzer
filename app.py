@@ -8,6 +8,7 @@ import json
 import time
 import requests as requests_lib
 from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 
 
 app = Flask(__name__)
@@ -17,10 +18,28 @@ stats_cache = {}
 cache_timestamps = {}
 
 # How long a single attempt at the NBA API is allowed to take before we
-# give up on it. This is deliberately well under gunicorn's worker timeout
-# so a slow/blocked upstream call can't hang the whole server.
-NBA_API_TIMEOUT = 15
+# give up on it. This is enforced with a hard deadline below (not just
+# requests' own timeout=), because stats.nba.com sometimes holds a
+# connection open without sending any bytes back - a common anti-bot
+# response to data-center IPs like Render's - which can outlast a plain
+# socket-level read timeout in edge cases.
+NBA_API_TIMEOUT = 12
 NBA_API_RETRIES = 2
+
+# A small persistent pool just for running the (potentially hanging) NBA
+# API calls off the request-handling path. If a call never returns, its
+# thread is abandoned rather than blocking the Flask response - we just
+# stop waiting on it after NBA_API_TIMEOUT seconds.
+_fetch_executor = ThreadPoolExecutor(max_workers=4)
+
+
+def _fetch_from_nba_api(season):
+    stats = leaguedashplayerstats.LeagueDashPlayerStats(
+        season=season,
+        per_mode_detailed='PerGame',
+        timeout=NBA_API_TIMEOUT
+    )
+    return stats.get_data_frames()[0]
 
 
 def get_season_stats(season='2025-26', force_refresh=False):
@@ -34,21 +53,22 @@ def get_season_stats(season='2025-26', force_refresh=False):
     if season in stats_cache and not force_refresh:
         return stats_cache[season]
 
-    # Fetch data from NBA API, with a short timeout and a couple of quick
-    # retries. stats.nba.com is known to be slow/rate-limit cloud IPs, and
-    # without a timeout a single hung request can block the whole app.
+    # Fetch data from NBA API, with a hard deadline and a couple of quick
+    # retries. A single hung request must never be able to block other
+    # requests, so it always runs with a firm cutoff.
     last_error = None
     for attempt in range(NBA_API_RETRIES + 1):
+        future = _fetch_executor.submit(_fetch_from_nba_api, season)
         try:
-            stats = leaguedashplayerstats.LeagueDashPlayerStats(
-                season=season,
-                per_mode_detailed='PerGame',
-                timeout=NBA_API_TIMEOUT
-            )
-            df = stats.get_data_frames()[0]
+            df = future.result(timeout=NBA_API_TIMEOUT)
             stats_cache[season] = df
             cache_timestamps[season] = datetime.now()
             return df
+        except FutureTimeoutError:
+            last_error = f"timed out after {NBA_API_TIMEOUT}s (no response from stats.nba.com)"
+            if attempt < NBA_API_RETRIES:
+                time.sleep(1)
+            continue
         except (requests_lib.exceptions.Timeout,
                 requests_lib.exceptions.ConnectionError) as e:
             last_error = e
@@ -67,7 +87,8 @@ def get_season_stats(season='2025-26', force_refresh=False):
         return stats_cache[season]
 
     raise RuntimeError(
-        f"Couldn't reach the NBA stats API for season {season}: {last_error}"
+        f"Couldn't reach the NBA stats API for season {season}: {last_error}. "
+        f"stats.nba.com may be blocking requests from this server's IP range."
     )
 
 
